@@ -1,7 +1,3 @@
-# ============================================
-# AI-Driven Polymer Feature Generation (Corrected)
-# ============================================
-
 import pandas as pd
 import numpy as np
 from rdkit import Chem
@@ -9,9 +5,6 @@ from rdkit.Chem import Descriptors, Crippen, Lipinski
 from rdkit.Chem.rdMolDescriptors import CalcTPSA
 import random
 
-# -----------------------------
-# 1️⃣ Define polymers
-# -----------------------------
 polymers = {
     "PEO": "CCO",
     "PAN": "C(C#N)C",
@@ -35,21 +28,17 @@ polymers = {
     "POM": "C1COC1"
 }
 
-# -----------------------------
-# 2️⃣ Generate dataset
-# -----------------------------
 data = []
 for polymer, smi in polymers.items():
-    for salt_conc in [0.1, 0.2, 0.3, 0.4, 0.5]:  # 5 experimental conditions
-        temperature = random.choice([298, 323])  # K
+    for salt_conc in [0.1, 0.2, 0.3, 0.4, 0.5]:  
+        temperature = random.choice([298, 323])  
         mol = Chem.MolFromSmiles(smi)
         if mol is None:
             continue
 
-        # Base descriptors
         monomer_weight = Descriptors.MolWt(mol)
-        chain_length = random.randint(10, 50)  # keep reasonable
-        molecular_weight = monomer_weight * chain_length  # ensures physical consistency
+        chain_length = random.randint(10, 50)  
+        molecular_weight = monomer_weight * chain_length  
         Tg = random.uniform(250, 350)
         Tm = random.uniform(120, 200)
         TPSA_val = CalcTPSA(mol)
@@ -57,14 +46,11 @@ for polymer, smi in polymers.items():
         solubility_param = random.uniform(10, 25)
         surface_energy = random.uniform(0.05, 0.2)
 
-        # Heteroatom & polar atom ratio
         heteroatom_ratio = sum(1 for a in mol.GetAtoms() if a.GetAtomicNum() not in [6,1])/mol.GetNumAtoms()
         polar_atom_ratio = sum(1 for a in mol.GetAtoms() if a.GetAtomicNum() in [7,8,9,16])/mol.GetNumAtoms()
-
-        # Flexibility index (scaled to <=1)
+        
         flexibility_index = min(chain_length / (molecular_weight/monomer_weight), 1.0)
 
-        # 3 intermediate features
         logP = Crippen.MolLogP(mol)
         num_H_donors = Lipinski.NumHDonors(mol)
         num_H_acceptors = Lipinski.NumHAcceptors(mol)
@@ -86,19 +72,13 @@ columns = [
 df = pd.DataFrame(data, columns=columns)
 print("Generated dataset shape:", df.shape)
 
-# -----------------------------
-# 3️⃣ Remove exact duplicates
-# -----------------------------
 df_clean = df.drop_duplicates(subset=["polymer","salt_concentration","temperature"]).reset_index(drop=True)
 print("Cleaned dataset shape:", df_clean.shape)
 
-# -----------------------------
-# 4️⃣ Range check
-# -----------------------------
 ranges = {
     "Tg": (200, 400),
     "Tm": (100, 250),
-    "molecular_weight": (100, 2500),  # updated realistic
+    "molecular_weight": (100, 2500),  
     "chain_length": (10, 50),
     "TPSA": (0, 150),
     "dipole_moment": (0, 5),
@@ -118,9 +98,6 @@ for col, (low, high) in ranges.items():
     if len(out_of_range) > 0:
         print(out_of_range[[col,"polymer","smiles"]])
 
-# -----------------------------
-# 5️⃣ Save dataset
-# -----------------------------
 df_clean.to_csv("polymer_features_final_corrected.csv", index=False)
 df_clean.to_excel("polymer_features_final_corrected.xlsx", index=False)
 print("Saved dataset as CSV and Excel.")
